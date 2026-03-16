@@ -1,0 +1,130 @@
+-- =============================================
+-- 1. EXTENSIONS & SYSTEM TABLES
+-- =============================================
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Role System (Core logic for permissions)
+CREATE TABLE IF NOT EXISTS Roles (
+    RoleId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    RoleName VARCHAR(50) UNIQUE NOT NULL -- 'Planning', 'Processing', 'Management'
+);
+
+-- Seed Roles immediately
+INSERT INTO Roles (RoleName) VALUES ('Planning'), ('Processing'), ('Management')
+ON CONFLICT (RoleName) DO NOTHING;
+
+-- =============================================
+-- 2. USER & TEAM HIERARCHY
+-- =============================================
+CREATE TABLE IF NOT EXISTS Users (
+    UserId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    FullName VARCHAR(200) NOT NULL,
+    Email VARCHAR(200) UNIQUE NOT NULL,
+    RoleId INT REFERENCES Roles(RoleId),
+    IsAdmin BOOLEAN DEFAULT FALSE, -- Allows Creation/Assignment
+    ParentUserId INT NULL REFERENCES Users(UserId), -- For Sub-users/Staff
+    IsActive BOOLEAN DEFAULT TRUE,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 3. ASSETS (Entities & Satellites)
+-- =============================================
+CREATE TABLE IF NOT EXISTS Entities (
+    EntityId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    EntityName VARCHAR(200) NOT NULL,
+    ParentEntityId INT NULL REFERENCES Entities(EntityId),
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Satellites (
+    SatelliteId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    SatelliteName VARCHAR(100) NOT NULL,
+    NoradId INT UNIQUE,
+    SwathWidthKm FLOAT NOT NULL DEFAULT 20.0,
+    TleLine1 TEXT,
+    TleLine2 TEXT,
+    LastUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 4. MISSION CORE (Requests & Workflow)
+-- =============================================
+CREATE TABLE IF NOT EXISTS ImageRequests (
+    RequestId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    MainEntityId INT NOT NULL REFERENCES Entities(EntityId),
+    SubEntityId INT NOT NULL REFERENCES Entities(EntityId),
+    CreatedByUserId INT NOT NULL REFERENCES Users(UserId), -- Must be a Planning Admin
+    
+    -- Request Assets
+    RequestFormImage BYTEA, 
+    RequestFormFileName VARCHAR(255),
+    Priority INT DEFAULT 1,
+    
+    -- Status Workflow
+    Status VARCHAR(30) DEFAULT 'New', 
+    CONSTRAINT check_status CHECK (Status IN ('New', 'Feasible', 'Planned', 'Processing', 'Completed', 'Delivered', 'Impossible')),
+    
+    FeasibilityDetails JSONB, -- Result of SGP4 calculation
+    CompletionPercentage DECIMAL(5,2) DEFAULT 0.00,
+    
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================================
+-- 5. SPATIAL TARGETS (Points/Polygons)
+-- =============================================
+CREATE TABLE IF NOT EXISTS RequestTargets (
+    TargetId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    RequestId UUID NOT NULL REFERENCES ImageRequests(RequestId) ON DELETE CASCADE,
+    TargetLabel VARCHAR(100),
+    TargetGeometry GEOMETRY(GEOMETRY, 4326) NOT NULL,
+    IsCaptured BOOLEAN DEFAULT FALSE,
+    CaptureDate TIMESTAMP NULL
+);
+
+-- =============================================
+-- 6. DYNAMIC TEAM ASSIGNMENTS
+-- =============================================
+CREATE TABLE IF NOT EXISTS RequestAssignments (
+    AssignmentId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    RequestId UUID NOT NULL REFERENCES ImageRequests(RequestId) ON DELETE CASCADE,
+    UserId INT NOT NULL REFERENCES Users(UserId), -- Staff or Admin
+    AssignedByUserId INT REFERENCES Users(UserId), -- The Admin who assigned
+    AssignedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(RequestId, UserId)
+);
+
+-- =============================================
+-- 7. AUDIT & MONITORING (Real-time tracking)
+-- =============================================
+CREATE TABLE IF NOT EXISTS OperationsLog (
+    LogId BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    RequestId UUID NOT NULL REFERENCES ImageRequests(RequestId),
+    ActionTaken VARCHAR(100),
+    PerformedByUserId INT REFERENCES Users(UserId),
+    LogTimestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Details TEXT
+);
+
+-- =============================================
+-- 8. TRIGGERS & PERFORMANCE
+-- =============================================
+
+-- Auto-update the 'UpdatedAt' timestamp
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.UpdatedAt = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_request_modtime 
+    BEFORE UPDATE ON ImageRequests 
+    FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
+
+-- Spatial Indexing for fast geometry calculations
+CREATE INDEX IF NOT EXISTS idx_rt_spatial ON RequestTargets USING GIST (TargetGeometry);
+CREATE INDEX IF NOT EXISTS idx_req_status ON ImageRequests(Status);

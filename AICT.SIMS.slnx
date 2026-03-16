@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="AICT.SIMS.Application/AICT.SIMS.Application.csproj" />
+  <Project Path="AICT.SIMS.Core/AICT.SIMS.Core.csproj" />
+  <Project Path="AICT.SIMS.Domain/AICT.SIMS.Domain.csproj" />
+  <Project Path="AICT.SIMS.Infrastructure/AICT.SIMS.Infrastructure.csproj" />
+  <Project Path="AICT.SIMS.Persistence/AICT.SIMS.Persistence.csproj" />
+  <Project Path="AICT.SIMS.WebApi/AICT.SIMS.WebApi.csproj" />
+</Solution>

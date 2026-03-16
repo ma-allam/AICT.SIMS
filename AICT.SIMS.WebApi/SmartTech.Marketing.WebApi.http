@@ -1,0 +1,6 @@
+@$ext_safeprojectname$.WebApi_HostAddress = http://localhost:5189
+
+GET {{$ext_safeprojectname$.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
