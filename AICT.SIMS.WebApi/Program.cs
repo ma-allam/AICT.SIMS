@@ -1,7 +1,7 @@
 using AICT.SIMS.Application.Contract;
 using AICT.SIMS.Core.AppSetting;
 using AICT.SIMS.Core.Exceptions;
-using AICT.SIMS.Domain.Entities1;
+using AICT.SIMS.Domain.DomainEntities;
 using AICT.SIMS.Persistence.Context;
 using AICT.SIMS.WebApi.DependencyInjection;
 using HealthChecks.UI.Client;

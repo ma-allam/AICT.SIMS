@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using AICT.SIMS.Application.Contract;
+﻿using AICT.SIMS.Application.Contract;
 using AICT.SIMS.Domain.DomainEntities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 
 namespace AICT.SIMS.Persistence.Context;
 
-public partial class DatabaseService : DbContext,IDataBaseService
+public partial class DatabaseService : IdentityDbContext<ApplicationUser>, IDataBaseService
 {
     public DatabaseService()
     {
@@ -15,8 +16,20 @@ public partial class DatabaseService : DbContext,IDataBaseService
     public DatabaseService(DbContextOptions<DatabaseService> options)
         : base(options)
     {
-    }
+        Database.EnsureCreated();
 
+    }
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ApplicationUser>()
+            .HasOne(a => a.User)
+            .WithOne(c => c.AppUser)
+            .HasForeignKey<Users>(c => c.AppUserId)
+            .OnDelete(DeleteBehavior.Cascade); // Or another delete behavior as appropriate
+
+    }
     public virtual DbSet<Entities> Entities { get; set; }
 
     public virtual DbSet<Imagerequests> Imagerequests { get; set; }

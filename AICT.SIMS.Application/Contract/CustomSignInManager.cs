@@ -1,4 +1,4 @@
-﻿using AICT.SIMS.Domain.Entities1;
+﻿using AICT.SIMS.Domain.DomainEntities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
