@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using AICT.SIMS.Domain.DomainEntities;
 using Microsoft.EntityFrameworkCore;
 
 namespace AICT.SIMS.Domain.DomainEntities;
@@ -26,13 +27,17 @@ public partial class Users
     public int? Roleid { get; set; }
 
     [Column("isadmin")]
-    public bool? Isadmin { get; set; }
+    public bool Isadmin { get; set; }
 
     [Column("parentuserid")]
     public int? Parentuserid { get; set; }
 
     [Column("isactive")]
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
+    [Column("appuserid")]
+    public string AppUserId { get; set; } = null!;
+    [ForeignKey("AppUserId")]
+    public virtual ApplicationUser AppUser { get; set; } = null!;
 
     [Column("createdat", TypeName = "timestamp without time zone")]
     public DateTime? Createdat { get; set; }
