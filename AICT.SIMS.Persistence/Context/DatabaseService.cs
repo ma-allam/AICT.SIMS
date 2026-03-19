@@ -28,7 +28,10 @@ public partial class DatabaseService : IdentityDbContext<ApplicationUser>, IData
             .WithOne(c => c.AppUser)
             .HasForeignKey<Users>(c => c.AppUserId)
             .OnDelete(DeleteBehavior.Cascade); // Or another delete behavior as appropriate
-
+        modelBuilder.Entity<Applicationrole>(Entity =>
+        {
+            Entity.Property(R => R.Description).HasMaxLength(500);
+        });
     }
     public virtual DbSet<Entities> Entities { get; set; }
 

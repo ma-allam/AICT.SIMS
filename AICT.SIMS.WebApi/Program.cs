@@ -42,7 +42,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, Applicationrole>()
     .AddEntityFrameworkStores<DatabaseService>()
     .AddDefaultTokenProviders();
 
