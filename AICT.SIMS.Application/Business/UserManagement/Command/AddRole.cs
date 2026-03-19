@@ -1,10 +1,11 @@
 ﻿using AICT.SIMS.Application.Contract;
+using AICT.SIMS.Application.Contract;
+using AICT.SIMS.Core.Exceptions;
+using AICT.SIMS.Domain.DomainEntities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using AICT.SIMS.Application.Contract;
-using AICT.SIMS.Core.Exceptions;
 using System.Security.Permissions;
 
 namespace AICT.SIMS.Application.Business.UserManagement.Command
@@ -13,12 +14,12 @@ namespace AICT.SIMS.Application.Business.UserManagement.Command
     {
         private readonly IDataBaseService _databaseService;
         private readonly ILogger<AddRoleHandler> _logger;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        public AddRoleHandler(ILogger<AddRoleHandler> logger, IDataBaseService databaseService, RoleManager<IdentityRole> roleManager)
+        private readonly RoleManager<Applicationrole> _rolemanager;
+        public AddRoleHandler(ILogger<AddRoleHandler> logger, IDataBaseService databaseService, RoleManager<Applicationrole> rolemanager)
         {
             _logger = logger;
             _databaseService = databaseService;
-            _roleManager = roleManager;
+            _rolemanager = rolemanager;
         }
         public async Task<AddRoleHandlerOutput> Handle(AddRoleHandlerInput request, CancellationToken cancellationToken)
         {
@@ -26,8 +27,8 @@ namespace AICT.SIMS.Application.Business.UserManagement.Command
             AddRoleHandlerOutput output = new AddRoleHandlerOutput(request.CorrelationId());
 
           
-                var role = new IdentityRole { Name = request.RoleName };
-                var result = await _roleManager.CreateAsync(role);
+                var role = new Applicationrole { Name = request.RoleName ,Description=request.Descr};
+                var result = await _rolemanager.CreateAsync(role);
             if (result.Succeeded)
             {
                 output.Message = "Role created successfully";

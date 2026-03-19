@@ -6,6 +6,12 @@ namespace AICT.SIMS.Application.Business.UserManagement.Query
     {
         public GetAllRolesHandlerOutput() { }
         public GetAllRolesHandlerOutput(Guid correlationId) : base(correlationId) { }
-        public List<string>  Roles { get; set; }
+        public List<Roleitem>  Roles { get; set; }
+    }
+    public class Roleitem
+    {
+        public string Roleid { get; set; }
+        public string Rolename { get; set; }
+        public string Description { get; set; }
     }
 }
